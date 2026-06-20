@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Météo du jour — Vestiaire</title>
+<style>
+  :root{
+    --vert:#3a9d5a;
+    --jaune:#d4a82e;
+    --orange:#d4711f;
+    --rouge:#c4392f;
+    --noir:#8a8f9b;
+    --fond:#0f1115;
+    --panneau:#1a1d24;
+    --panneau-clair:#22262f;
+    --texte:#eef0f3;
+    --texte-att:#9aa0ad;
+    --ligne:#2c303a;
+    --bleu:#4a7dd6;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--fond);
+    color:var(--texte);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:20px 18px 60px;}
+
+  .header{text-align:center;margin-bottom:22px;padding-top:10px;}
+  .header .tag{
+    display:inline-block;
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--texte-att);
+    border:1px solid var(--ligne);
+    border-radius:999px;
+    padding:4px 12px;
+    margin-bottom:10px;
+  }
+  .header h1{font-size:26px;font-weight:700;margin:0 0 4px;letter-spacing:-0.01em;}
+  .header p{font-size:14px;color:var(--texte-att);margin:0;}
+  .header .date{font-size:13px;color:var(--texte-att);margin-top:6px;text-transform:capitalize;}
+
+  .panneau{background:var(--panneau);border:1px solid var(--ligne);border-radius:18px;padding:20px;}
+
+  .champ-nom{margin-bottom:18px;}
+  .champ-nom label{display:block;font-size:13px;color:var(--texte-att);margin-bottom:8px;}
+  .champ-nom select{
+    width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--ligne);
+    background:var(--panneau-clair);color:var(--texte);font-size:16px;appearance:none;
+  }
+  .champ-nom select:focus{outline:2px solid var(--bleu);}
+
+  .niveaux{display:flex;flex-direction:column;gap:10px;}
+  .niveau-btn{
+    display:flex;align-items:center;gap:14px;width:100%;text-align:left;
+    border:2px solid var(--ligne);background:var(--panneau-clair);border-radius:14px;
+    padding:13px 14px;cursor:pointer;transition:transform .08s ease, border-color .15s ease, background .15s ease;
+    color:var(--texte);
+  }
+  .niveau-btn:active{transform:scale(0.98);}
+  .niveau-btn .pastille{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+  .niveau-btn .txt{flex:1;}
+  .niveau-btn .titre{font-size:15px;font-weight:700;margin-bottom:1px;}
+  .niveau-btn .soustitre{font-size:12.5px;color:var(--texte-att);line-height:1.3;}
+  .niveau-btn .num{font-size:12px;color:var(--texte-att);font-weight:700;width:20px;text-align:center;flex-shrink:0;}
+
+  .niveau-btn.n1 .pastille{background:rgba(58,157,90,.18);}
+  .niveau-btn.n1.selected{border-color:var(--vert); background:rgba(58,157,90,.12);}
+  .niveau-btn.n2 .pastille{background:rgba(212,168,46,.18);}
+  .niveau-btn.n2.selected{border-color:var(--jaune); background:rgba(212,168,46,.12);}
+  .niveau-btn.n3 .pastille{background:rgba(212,113,31,.18);}
+  .niveau-btn.n3.selected{border-color:var(--orange); background:rgba(212,113,31,.12);}
+  .niveau-btn.n4 .pastille{background:rgba(196,57,47,.18);}
+  .niveau-btn.n4.selected{border-color:var(--rouge); background:rgba(196,57,47,.12);}
+  .niveau-btn.n5 .pastille{background:rgba(255,255,255,.08);}
+  .niveau-btn.n5.selected{border-color:var(--noir); background:rgba(255,255,255,.06);}
+
+  .valider{margin-top:18px;width:100%;padding:15px;border-radius:14px;border:none;background:var(--bleu);color:#fff;font-size:16px;font-weight:700;cursor:pointer;}
+  .valider:disabled{background:#3a3e48; color:#7a7e88; cursor:not-allowed;}
+  .valider:active:not(:disabled){transform:scale(0.98);}
+  .valider.envoi{opacity:.7;}
+
+  .confirmation{display:none;text-align:center;padding:30px 10px;}
+  .confirmation .grand-emoji{font-size:54px;margin-bottom:14px;display:block;}
+  .confirmation h2{font-size:19px;margin:0 0 6px;}
+  .confirmation p{color:var(--texte-att);font-size:14px;margin:0 0 22px;}
+  .confirmation .nouveau{background:none;border:1px solid var(--ligne);color:var(--texte);padding:11px 20px;border-radius:12px;font-size:14px;cursor:pointer;}
+
+  .erreur{
+    display:none;
+    background:rgba(196,57,47,.12);
+    border:1px solid rgba(196,57,47,.4);
+    color:#e8a39d;
+    font-size:13px;
+    padding:12px 14px;
+    border-radius:12px;
+    margin-top:14px;
+    line-height:1.5;
+  }
+
+  .toggle-zone{margin-top:26px;text-align:center;}
+  .toggle-btn{background:none;border:1px solid var(--ligne);color:var(--texte-att);font-size:13px;padding:9px 18px;border-radius:999px;cursor:pointer;}
+
+  .dashboard{display:none;margin-top:22px;}
+  .dashboard.show{display:block;}
+
+  .dash-tabs{display:flex;gap:8px;margin-bottom:16px;}
+  .dash-tab{
+    flex:1;background:var(--panneau);border:1px solid var(--ligne);color:var(--texte-att);
+    padding:9px;border-radius:10px;font-size:13px;cursor:pointer;
+  }
+  .dash-tab.active{border-color:var(--bleu); color:var(--texte); background:rgba(74,125,214,.12);}
+
+  .dash-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;}
+  .dash-head h2{font-size:16px;margin:0;}
+  .dash-head .count{font-size:13px;color:var(--texte-att);}
+
+  .nav-jour{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;}
+  .nav-jour button{background:var(--panneau-clair);border:1px solid var(--ligne);color:var(--texte);width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:16px;}
+  .nav-jour .jour-actuel{flex:1;text-align:center;font-size:14px;font-weight:700;text-transform:capitalize;}
+
+  .dash-loading{text-align:center;color:var(--texte-att);font-size:13px;padding:24px;}
+  .dash-empty{text-align:center;color:var(--texte-att);font-size:14px;padding:30px 10px;border:1px dashed var(--ligne);border-radius:14px;}
+
+  .groupe{margin-bottom:16px;}
+  .groupe-titre{display:flex;align-items:center;gap:8px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--texte-att);margin-bottom:8px;font-weight:700;}
+  .groupe-titre .dot{width:9px;height:9px;border-radius:50%;}
+  .groupe-titre .dot.v1{background:var(--vert);}
+  .groupe-titre .dot.v2{background:var(--jaune);}
+  .groupe-titre .dot.v3{background:var(--orange);}
+  .groupe-titre .dot.v4{background:var(--rouge);}
+  .groupe-titre .dot.v5{background:var(--noir);}
+
+  .joueur-ligne{display:flex;align-items:center;gap:10px;background:var(--panneau);border:1px solid var(--ligne);border-radius:12px;padding:10px 12px;margin-bottom:6px;}
+  .joueur-ligne .em{font-size:20px;}
+  .joueur-ligne .nom{flex:1;font-size:14.5px;font-weight:600;}
+  .joueur-ligne .heure{font-size:11.5px;color:var(--texte-att);}
+
+  .select-joueur-historique{
+    width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--ligne);
+    background:var(--panneau-clair);color:var(--texte);font-size:14px;margin-bottom:14px;appearance:none;
+  }
+
+  .histo-ligne{
+    display:flex;align-items:center;gap:10px;background:var(--panneau);border:1px solid var(--ligne);
+    border-radius:10px;padding:9px 12px;margin-bottom:6px;
+  }
+  .histo-ligne .em{font-size:17px;}
+  .histo-ligne .d{flex:1;font-size:13px;color:var(--texte-att);text-transform:capitalize;}
+  .histo-ligne .niv{font-size:12.5px;font-weight:700;}
+
+  .moyenne-card{
+    background:var(--panneau-clair);border:1px solid var(--ligne);border-radius:14px;
+    padding:14px;margin-bottom:14px;text-align:center;
+  }
+  .moyenne-card .chiffre{font-size:28px;font-weight:700;}
+  .moyenne-card .label{font-size:12px;color:var(--texte-att);margin-top:2px;}
+
+  .dash-actions{display:flex;gap:10px;margin-top:16px;}
+  .dash-actions button{flex:1;background:var(--panneau);border:1px solid var(--ligne);color:var(--texte-att);padding:10px;border-radius:10px;font-size:13px;cursor:pointer;}
+
+  .footer-note{text-align:center;color:var(--texte-att);font-size:11.5px;margin-top:26px;line-height:1.5;}
+
+  .config-box{
+    background:rgba(212,168,46,.1);border:1px solid rgba(212,168,46,.35);border-radius:14px;
+    padding:14px;margin-bottom:18px;font-size:13px;color:var(--texte);line-height:1.6;
+  }
+  .config-box input{
+    width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid var(--ligne);
+    background:var(--panneau-clair);color:var(--texte);font-size:13px;
+  }
+  .config-box button{
+    margin-top:8px;background:var(--bleu);border:none;color:#fff;padding:9px 16px;
+    border-radius:8px;font-size:13px;cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <span class="tag">Check-in joueur</span>
+    <h1>Météo du jour</h1>
+    <p>Comment tu te sens avant l'entraînement ?</p>
+    <div class="date" id="dateAffichee"></div>
+  </div>
+
+  <div class="panneau" id="ecranSaisie">
+    <div class="champ-nom">
+      <label for="selectJoueur">Ton prénom</label>
+      <select id="selectJoueur">
+        <option value="">— Sélectionne ton prénom —</option>
+      </select>
+    </div>
+
+    <div class="niveaux" id="niveaux">
+      <button class="niveau-btn n1" data-niveau="1">
+        <span class="pastille">🟩</span>
+        <span class="txt"><span class="titre">Pleine forme !</span><span class="soustitre">Prêt à courir partout</span></span>
+        <span class="num">1</span>
+      </button>
+      <button class="niveau-btn n2" data-niveau="2">
+        <span class="pastille">🟨</span>
+        <span class="txt"><span class="titre">Un peu lourd</span><span class="soustitre">Petite journée d'école, mais ça va</span></span>
+        <span class="num">2</span>
+      </button>
+      <button class="niveau-btn n3" data-niveau="3">
+        <span class="pastille">🟧</span>
+        <span class="txt"><span class="titre">Fatigué</span><span class="soustitre">Gros contrôle à l'école, mauvaise nuit</span></span>
+        <span class="num">3</span>
+      </button>
+      <button class="niveau-btn n4" data-niveau="4">
+        <span class="pastille">🟥</span>
+        <span class="txt"><span class="titre">Très fatigué</span><span class="soustitre">Courbatures, pas d'énergie</span></span>
+        <span class="num">4</span>
+      </button>
+      <button class="niveau-btn n5" data-niveau="5">
+        <span class="pastille">⬛</span>
+        <span class="txt"><span class="titre">Épuisé / Douleur</span><span class="soustitre">Bobo quelque part, impossible de forcer</span></span>
+        <span class="num">5</span>
+      </button>
+    </div>
+
+    <button class="valider" id="btnValider" disabled>Valider mon check-in</button>
+    <div class="erreur" id="zoneErreur"></div>
+  </div>
+
+  <div class="confirmation" id="ecranConfirmation">
+    <span class="grand-emoji" id="confEmoji">🟩</span>
+    <h2 id="confTitre">C'est noté !</h2>
+    <p id="confSous">Bon entraînement.</p>
+    <button class="nouveau" id="btnNouveau">Faire un autre check-in</button>
+  </div>
+
+  <div class="toggle-zone">
+    <button class="toggle-btn" id="btnToggleDash">Voir le tableau de bord coach</button>
+  </div>
+
+  <div class="dashboard" id="dashboard">
+    <div class="dash-tabs">
+      <button class="dash-tab active" data-onglet="jour">Vue du jour</button>
+      <button class="dash-tab" data-onglet="historique">Historique joueur</button>
+    </div>
+
+    <div id="vueJour">
+      <div class="nav-jour">
+        <button id="jourPrecedent">‹</button>
+        <div class="jour-actuel" id="jourActuelTxt">aujourd'hui</div>
+        <button id="jourSuivant">›</button>
+      </div>
+      <div class="dash-head">
+        <h2>Check-ins</h2>
+        <span class="count" id="dashCount">—</span>
+      </div>
+      <div id="dashContenu"><div class="dash-loading">Chargement…</div></div>
+    </div>
+
+    <div id="vueHistorique" style="display:none;">
+      <select class="select-joueur-historique" id="selectHistoJoueur">
+        <option value="">— Choisir un joueur —</option>
+      </select>
+      <div id="histoContenu"></div>
+    </div>
+
+    <div class="dash-actions">
+      <button id="btnGererEffectif">Gérer l'effectif</button>
+      <button id="btnRafraichir">Actualiser les données</button>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Les check-ins sont enregistrés dans votre Google Sheet et visibles depuis n'importe quel appareil connecté à ce lien.
+  </div>
+
+</div>
+
+<script>
+(function(){
+
+  var NIVEAUX = {
+    1:{emoji:"🟩",titre:"Pleine forme !",confSous:"Profite bien de la séance !"},
+    2:{emoji:"🟨",titre:"Un peu lourd",confSous:"Bon entraînement, à l'écoute de ton corps."},
+    3:{emoji:"🟧",titre:"Fatigué",confSous:"Le coach va adapter, repose-toi bien après."},
+    4:{emoji:"🟥",titre:"Très fatigué",confSous:"Merci de l'avoir signalé. Prends soin de toi."},
+    5:{emoji:"⬛",titre:"Épuisé / Douleur",confSous:"Va voir le coach avant de commencer."}
+  };
+
+  var EFFECTIF_DEFAUT = ["Hadi","Sebastien","Mickaël","Bakoutoubo","Sacha","Keys","Nourou","Yanis","Mathis","Ethan","Abdoul Karim","Jalil","Gabin","Adam","Kalifa","Bilel","Pablo","Melih","Issam","Emir","Loan","Sarah"];
+  var CODE_PIN_COACH = "0501";
+  var STORAGE_SESSION_COACH = "rpe_coach_deverrouille";
+  var STORAGE_EFFECTIF = "rpe_effectif";
+
+  function chargerEffectif(){
+    try{ var raw = localStorage.getItem(STORAGE_EFFECTIF); if(raw) return JSON.parse(raw); }catch(e){}
+    localStorage.setItem(STORAGE_EFFECTIF, JSON.stringify(EFFECTIF_DEFAUT));
+    return EFFECTIF_DEFAUT.slice();
+  }
+  function sauverEffectif(liste){ localStorage.setItem(STORAGE_EFFECTIF, JSON.stringify(liste)); }
+
+  var URL_SCRIPT_FIXE = "https://script.google.com/macros/s/AKfycbw9ychbh5oSoc-k22FnT7mmCf04684C2hJmllRDATvNQR37I_Udwpn3mHTAVvA3af9cRQ/exec";
+  function urlScript(){ return URL_SCRIPT_FIXE; }
+
+  // ---------- Date affichée ----------
+  var moisFr = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+  var joursFr = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+  function formatDateLisible(d){ return joursFr[d.getDay()] + " " + d.getDate() + " " + moisFr[d.getMonth()]; }
+  function clefISO(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+
+  document.getElementById("dateAffichee").textContent = formatDateLisible(new Date());
+
+  // ---------- Select joueur (saisie) ----------
+  var selectJoueur = document.getElementById("selectJoueur");
+  function remplirSelects(){
+    var effectif = chargerEffectif();
+    selectJoueur.innerHTML = '<option value="">— Sélectionne ton prénom —</option>';
+    var selectHisto = document.getElementById("selectHistoJoueur");
+    selectHisto.innerHTML = '<option value="">— Choisir un joueur —</option>';
+    effectif.forEach(function(nom){
+      var o1 = document.createElement("option"); o1.value = nom; o1.textContent = nom;
+      selectJoueur.appendChild(o1);
+      var o2 = document.createElement("option"); o2.value = nom; o2.textContent = nom;
+      selectHisto.appendChild(o2);
+    });
+  }
+  remplirSelects();
+
+  // ---------- Sélection niveau ----------
+  var niveauChoisi = null;
+  var boutons = document.querySelectorAll(".niveau-btn");
+  var btnValider = document.getElementById("btnValider");
+  function verifierFormulaireComplet(){ btnValider.disabled = !(selectJoueur.value && niveauChoisi); }
+  boutons.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      boutons.forEach(function(b){ b.classList.remove("selected"); });
+      btn.classList.add("selected");
+      niveauChoisi = parseInt(btn.getAttribute("data-niveau"),10);
+      verifierFormulaireComplet();
+    });
+  });
+  selectJoueur.addEventListener("change", verifierFormulaireComplet);
+
+  // ---------- Envoi du check-in ----------
+  var ecranSaisie = document.getElementById("ecranSaisie");
+  var ecranConfirmation = document.getElementById("ecranConfirmation");
+  var zoneErreur = document.getElementById("zoneErreur");
+
+  btnValider.addEventListener("click", function(){
+    if(!selectJoueur.value || !niveauChoisi) return;
+
+    zoneErreur.style.display = "none";
+    btnValider.disabled = true;
+    btnValider.classList.add("envoi");
+    btnValider.textContent = "Envoi…";
+
+    fetch(urlScript(), {
+      method: "POST",
+      headers: {"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({nom: selectJoueur.value, niveau: niveauChoisi})
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(reponse){
+      var info = NIVEAUX[niveauChoisi];
+      document.getElementById("confEmoji").textContent = info.emoji;
+      document.getElementById("confTitre").textContent = "Merci " + selectJoueur.value + " !";
+      document.getElementById("confSous").textContent = info.confSous;
+      ecranSaisie.style.display = "none";
+      ecranConfirmation.style.display = "block";
+    })
+    .catch(function(err){
+      zoneErreur.style.display = "block";
+      zoneErreur.textContent = "Envoi impossible. Vérifiez la connexion internet et réessayez. (" + err.message + ")";
+      btnValider.disabled = false;
+      btnValider.classList.remove("envoi");
+      btnValider.textContent = "Valider mon check-in";
+    });
+  });
+
+  document.getElementById("btnNouveau").addEventListener("click", function(){
+    ecranConfirmation.style.display = "none";
+    ecranSaisie.style.display = "block";
+    niveauChoisi = null;
+    boutons.forEach(function(b){ b.classList.remove("selected"); });
+    selectJoueur.value = "";
+    btnValider.classList.remove("envoi");
+    btnValider.textContent = "Valider mon check-in";
+    verifierFormulaireComplet();
+  });
+
+  // ---------- Dashboard coach ----------
+  var dashboard = document.getElementById("dashboard");
+  var btnToggleDash = document.getElementById("btnToggleDash");
+  var toutesLesReponses = null;
+  var jourAffiche = new Date();
+
+  btnToggleDash.addEventListener("click", function(){
+    var dejaOuvert = dashboard.classList.contains("show");
+    if(dejaOuvert){
+      dashboard.classList.remove("show");
+      btnToggleDash.textContent = "Voir le tableau de bord coach";
+      return;
+    }
+    var deverrouille = sessionStorage.getItem(STORAGE_SESSION_COACH) === "1";
+    if(!deverrouille){
+      var saisie = prompt("Code coach (4 chiffres) :");
+      if(saisie === null) return;
+      if(saisie.trim() !== CODE_PIN_COACH){
+        alert("Code incorrect.");
+        return;
+      }
+      sessionStorage.setItem(STORAGE_SESSION_COACH, "1");
+    }
+    dashboard.classList.add("show");
+    btnToggleDash.textContent = "Masquer le tableau de bord";
+    chargerDonnees();
+  });
+
+  function chargerDonnees(){
+    document.getElementById("dashContenu").innerHTML = '<div class="dash-loading">Chargement…</div>';
+    fetch(urlScript())
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        toutesLesReponses = data;
+        afficherVueJour();
+      })
+      .catch(function(err){
+        document.getElementById("dashContenu").innerHTML = '<div class="dash-empty">Impossible de charger les données. Vérifiez la connexion.</div>';
+      });
+  }
+
+  document.getElementById("btnRafraichir").addEventListener("click", chargerDonnees);
+
+  // ---------- Onglets ----------
+  var tabs = document.querySelectorAll(".dash-tab");
+  tabs.forEach(function(tab){
+    tab.addEventListener("click", function(){
+      tabs.forEach(function(t){ t.classList.remove("active"); });
+      tab.classList.add("active");
+      var onglet = tab.getAttribute("data-onglet");
+      document.getElementById("vueJour").style.display = onglet === "jour" ? "block" : "none";
+      document.getElementById("vueHistorique").style.display = onglet === "historique" ? "block" : "none";
+    });
+  });
+
+  // ---------- Vue du jour ----------
+  document.getElementById("jourPrecedent").addEventListener("click", function(){
+    jourAffiche.setDate(jourAffiche.getDate() - 1);
+    afficherVueJour();
+  });
+  document.getElementById("jourSuivant").addEventListener("click", function(){
+    jourAffiche.setDate(jourAffiche.getDate() + 1);
+    afficherVueJour();
+  });
+
+  function afficherVueJour(){
+    if(!toutesLesReponses) return;
+    var aujourdhui = new Date();
+    var estAujourdhui = clefISO(jourAffiche) === clefISO(aujourdhui);
+    document.getElementById("jourActuelTxt").textContent = estAujourdhui ? "aujourd'hui" : formatDateLisible(jourAffiche);
+
+    var clef = clefISO(jourAffiche);
+    var reponses = toutesLesReponses.filter(function(r){ return r.date === clef; });
+
+    document.getElementById("dashCount").textContent = reponses.length + (reponses.length===1 ? " réponse" : " réponses");
+
+    var conteneur = document.getElementById("dashContenu");
+    if(reponses.length === 0){
+      conteneur.innerHTML = '<div class="dash-empty">Aucun check-in ce jour-là.</div>';
+      return;
+    }
+
+    var parNiveau = {1:[],2:[],3:[],4:[],5:[]};
+    reponses.forEach(function(r){ parNiveau[r.niveau].push(r); });
+
+    var html = "";
+    [1,2,3,4,5].forEach(function(n){
+      if(parNiveau[n].length === 0) return;
+      var info = NIVEAUX[n];
+      html += '<div class="groupe"><div class="groupe-titre"><span class="dot v'+n+'"></span>'+info.titre+' ('+parNiveau[n].length+')</div>';
+      parNiveau[n].forEach(function(r){
+        html += '<div class="joueur-ligne"><span class="em">'+info.emoji+'</span><span class="nom">'+escapeHTML(r.nom)+'</span><span class="heure">'+escapeHTML(r.heure)+'</span></div>';
+      });
+      html += '</div>';
+    });
+    conteneur.innerHTML = html;
+  }
+
+  // ---------- Vue historique par joueur ----------
+  document.getElementById("selectHistoJoueur").addEventListener("change", function(){
+    afficherHistorique(this.value);
+  });
+
+  function afficherHistorique(nom){
+    var conteneur = document.getElementById("histoContenu");
+    if(!nom){ conteneur.innerHTML = ""; return; }
+    if(!toutesLesReponses){ conteneur.innerHTML = '<div class="dash-loading">Chargement…</div>'; return; }
+
+    var lignes = toutesLesReponses.filter(function(r){ return r.nom === nom; });
+    lignes.sort(function(a,b){ return a.date < b.date ? 1 : -1; });
+
+    if(lignes.length === 0){
+      conteneur.innerHTML = '<div class="dash-empty">Aucune donnée pour ce joueur.</div>';
+      return;
+    }
+
+    var somme = 0;
+    lignes.forEach(function(r){ somme += parseInt(r.niveau,10); });
+    var moyenne = (somme / lignes.length).toFixed(1);
+
+    var html = '<div class="moyenne-card"><div class="chiffre">'+moyenne+' / 5</div><div class="label">Niveau moyen de fatigue sur '+lignes.length+' check-ins</div></div>';
+
+    lignes.forEach(function(r){
+      var info = NIVEAUX[r.niveau];
+      var d = new Date(r.date + "T00:00:00");
+      html += '<div class="histo-ligne"><span class="em">'+info.emoji+'</span><span class="d">'+formatDateLisible(d)+'</span><span class="niv">'+r.niveau+'/5</span></div>';
+    });
+
+    conteneur.innerHTML = html;
+  }
+
+  function escapeHTML(s){ var div = document.createElement("div"); div.textContent = s; return div.innerHTML; }
+
+  // ---------- Gestion effectif ----------
+  document.getElementById("btnGererEffectif").addEventListener("click", function(){
+    var effectif = chargerEffectif();
+    var saisie = prompt("Liste des joueurs (séparés par une virgule) :", effectif.join(", "));
+    if(saisie === null) return;
+    var nouvelleListe = saisie.split(",").map(function(s){return s.trim();}).filter(function(s){return s.length>0;});
+    if(nouvelleListe.length === 0) return;
+    sauverEffectif(nouvelleListe);
+    remplirSelects();
+    alert("Effectif mis à jour (" + nouvelleListe.length + " joueurs).");
+  });
+
+})();
+</script>
+</body>
+</html>
